@@ -141,13 +141,15 @@ async function main() {
 
             const { points, reward , exposure } = await getPoints(historicApi, account, era);
 
+            const calcPayout = CalcPayout.from_params(Number(points.total), reward.toString(10));
+
 
             const payout = calcPayout.calc_payout(
-                Number(points.individual),
+                Number(points.individual.toJSON(validatorAddr)),
                 Number(commission),
-                nominatorExposure.unwrap().toString(10),
-                exposure.total.unwrap().toString(10),
-                address === validatorId,
+                exposure.unwrap().own.toString(10),
+                exposure.unwrap().total.toString(10),
+                true,
             );
 
 
