@@ -2,6 +2,7 @@ const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { cryptoWaitReady } = require('@polkadot/util-crypto');
 const fs = require('fs');
 const Papa = require('papaparse');
+const { CalcPayout } = require('@substrate/calc');
 require('dotenv').config();
 const earlyErasBlockInfo = require('./kusamaEarlyErasBlockInfo.json');
 
@@ -26,15 +27,17 @@ async function getCommissions(api, validatorAddr, era, isKusama) {
 
 }
 
-async function getPoints(api, validatorAddr, era) {
+async function getPoints(api, validatorAddr, era, blockNumber) {
     const eraIndex = api.registry.createType('EraIndex', era);
 
     let eraPoints;
     let validatorPoints;
+    let nextEraStartBlock = blockNumber;
 
     if (api.query.staking.erasRewardPoints) {
         eraPoints = await api.query.staking.erasRewardPoints(eraIndex);
         validatorPoints = await api.query.staking.erasValidatorReward(eraIndex);
+        return { eraPoints, reward,  }
     } else {
         // We check if we are in the Kusama chain since currently we have
         // the block info for the early eras only for Kusama.
@@ -70,7 +73,7 @@ async function getPoints(api, validatorAddr, era) {
                     }
                 });
         });
-        const points = await api.at(currentEraEndBlockHash).query.staking.currentEraPointsEarned();
+        const eraPoints = await api.at(currentEraEndBlockHash).query.staking.currentEraPointsEarned();
 
         if (!isKusama) {
             nextEraStartBlock = nextEraStartBlock - eraDurationInBlocks;
@@ -82,7 +85,7 @@ async function getPoints(api, validatorAddr, era) {
             exposure = await api.query.staking.stakers(validatorAddr);
         }
 
-        return { points, reward, exposure}
+        return { eraPoints, reward, exposure}
     }
 
 
@@ -139,7 +142,7 @@ async function main() {
 
             const { commission } = getCommissions(historicApi, account, era, isKusama, Number(stakingVersion));
 
-            const { points, reward , exposure } = await getPoints(historicApi, account, era);
+            const { points, reward , exposure } = await getPoints(historicApi, account, era, block);
 
             const calcPayout = CalcPayout.from_params(Number(points.total), reward.toString(10));
 
@@ -152,8 +155,12 @@ async function main() {
                 true,
             );
 
+            const discHash = await api.rpc.chain.getBlockHash(discardedBlockAt);
+            const discApi = await api.at(discHash);
 
-            const newValidatorInfo = apiAt.query.staking.erasStakersPaged ? await apiAt.query.staking.erasStakersPaged(queriedEra, account, 0) : await apiAt.query.staking.erasStakers(queriedEra, account);
+
+
+            const newValidatorInfo = discApi.query.staking.erasStakersPaged ? await discApi.query.staking.erasStakersPaged(queriedEra, account, 0) : await discApi.query.staking.erasStakers(queriedEra, account);
 
             const dropped = Number(newValidatorInfo.toJSON().total) == 0 ? true : false;
 
