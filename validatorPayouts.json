@@ -1,0 +1,18 @@
+{
+  "validatorPayouts": [
+    {
+      "validatorId": "15V6NjwmKkZihe644Tyr8GVLxjEzBAHktf6ZcJCTx7RPCoYS",
+      "era": 101,
+      "payout": "848240026683",
+      "wasClaimed": "true",
+      "activeValidator": "true"
+    },
+    {
+      "validatorId": "15V6NjwmKkZihe644Tyr8GVLxjEzBAHktf6ZcJCTx7RPCoYS",
+      "era": 102,
+      "payout": "784057832464",
+      "wasClaimed": "false",
+      "activeValidator": "true"
+    }
+  ]
+}
