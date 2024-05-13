@@ -3,6 +3,16 @@ import { CalcPayout } from '@substrate/calc';
 import { polkadotErasInfo } from './polkadotErasInfo.js';
 import fs from 'fs';
 
+const colours = {
+    reset: "\x1b[0m",
+    fg: {
+        red: "\x1b[1m\x1b[31m",
+        green: "\x1b[1m\x1b[32m",
+        yellow: "\x1b[1m\x1b[33m",
+        cyan: "\x1b[36m",
+    },
+  };
+
 async function fetchAccountStakingPayout(
     api,
     hash,
@@ -491,21 +501,42 @@ async function main () {
     const api = await ApiPromise.create({ provider: wsProvider });
 
     await api.isReady;
-
+    let i = 1;
     for (let e = 0; e <= range; e++) {
         // Getting the era
-        const era = parseInt(eraStart) + e;
+        let era = parseInt(eraStart) + e;
 
         // Getting the last block of the queried era by fetching the starting block number of the era
         // that is 85 eras after the queried era and then subtracting 1 block from it.
-        const blockNumber = polkadotErasInfo[era + 85].block_number - 1;
-        const hash = await api.rpc.chain.getBlockHash(blockNumber);
+        let blockNumber = polkadotErasInfo[era + 85].block_number - 1;
+        let hash = await api.rpc.chain.getBlockHash(blockNumber);
+        console.log(`\n${colours.fg.cyan}Payouts for era:${colours.reset} ${era}`);
+        console.log(`${colours.fg.cyan}Query block number:${colours.reset} ${blockNumber}`);
 
         let historicApi = await api.at(hash);
         let currentEra = await historicApi.query.staking.currentEra();
 
-        const payouts = await fetchAccountStakingPayout(api, hash, validatorId, era, currentEra.unwrap().toNumber(), historicApi);
+        let payouts = await fetchAccountStakingPayout(api, hash, validatorId, era, currentEra.unwrap().toNumber(), historicApi);
 
+        if (payouts.erasPayouts[0]?.activeValidator === true && payouts.erasPayouts[0].payouts[0]?.nominatorStakingPayout === undefined) {
+            console.log(`${colours.fg.red}No payouts FOUND ${colours.reset}`);
+            while (payouts.erasPayouts[0].payouts[0]?.nominatorStakingPayout === undefined) {
+                console.log(`  i: ${i}`);
+                blockNumber = polkadotErasInfo[era + 85 - i].block_number - 1;
+                hash = await api.rpc.chain.getBlockHash(blockNumber);
+                console.log(`  Test era: ${era + 85 - i}`);
+                console.log(`  Test block number: ${blockNumber}`);
+        
+                historicApi = await api.at(hash);
+                currentEra = await historicApi.query.staking.currentEra();
+        
+                payouts = await fetchAccountStakingPayout(api, hash, validatorId, era, currentEra.unwrap().toNumber(), historicApi);
+                i += 1;
+            }
+        }
+        if (payouts.erasPayouts[0].payouts[0]?.nominatorStakingPayout !== undefined) {
+            console.log(`${colours.fg.green}Payouts FOUND ${colours.reset}`);
+        }
         validatorPayouts.push(
             {
                 validatorId, 
