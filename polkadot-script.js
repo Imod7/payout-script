@@ -472,6 +472,14 @@ const deriveNominatedExposures = (
 }
 
 async function main () {
+    // For debugging purposes only
+    // async function delay(ms) {
+    //     return new Promise(resolve => {
+    //         setTimeout(() => { resolve('') }, ms);
+    //     })
+    // }
+    // await delay(10000);
+
     // Retrieving user parameters/input from the command line
     const validatorId = process.argv[2];
     const eraStart = process.argv[3];
@@ -497,8 +505,9 @@ async function main () {
         const era = parseInt(eraStart) + e;
         console.log("Era: ", era)
 
-        // Getting the right block number & hash based on that era
-        const blockNumber = polkadotErasInfo[era + 2].block_number;
+        // Getting the last block of the queried era by fetching the starting block number of the era
+        // that is 85 eras after the queried era and then subtracting 1 block from it.
+        const blockNumber = polkadotErasInfo[era + 85].block_number - 1;
         const hash = await api.rpc.chain.getBlockHash(blockNumber);
         console.log("blockNumber: ", blockNumber);
 
