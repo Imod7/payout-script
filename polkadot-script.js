@@ -521,6 +521,9 @@ async function main () {
         if (payouts.erasPayouts[0]?.activeValidator === true && payouts.erasPayouts[0].payouts[0]?.nominatorStakingPayout === undefined) {
             console.log(`${colours.fg.red}No payouts FOUND ${colours.reset}`);
             while (payouts.erasPayouts[0].payouts[0]?.nominatorStakingPayout === undefined) {
+                if (i % 84 === 0) {
+                    break;
+                }
                 console.log(`  i: ${i}`);
                 blockNumber = polkadotErasInfo[era + 85 - i].block_number - 1;
                 hash = await api.rpc.chain.getBlockHash(blockNumber);
