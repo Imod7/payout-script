@@ -1,4 +1,5 @@
-# payout-script
+# payout-scripts
+Scripts for staking-payouts in Polkadot and Kusama.
 
 ### Prerequisites
 - Install the `polkadot/api` package with the command `npm install @polkadot/api`
@@ -6,6 +7,10 @@
 ### How to start
 - Clone this repository
 - Move into the cloned repo with `cd payout-script`
+
+## Polkadot
+
+### Run Polkadot script
 - You can run the Polkadot script with the corresponding arguments as shown below:
     ```
     $ node polkadot-script.js <validatorAddress> <eraStart> <eraEnd> <urlEndpoint>
@@ -63,3 +68,15 @@ which will return the first object from the output
     "activeValidator": "true"
 }
 ```
+
+## Kusama
+- For the script to run you need to specify some parameters in the file `scriptParams.js` which are the following :
+    - validatorId
+    - eraStart
+    - eraEnd
+    - url
+- The current file has already an example with values you can replace.
+- You can run the Kusama script by giving the following command:
+    ```
+    $ node kusama-script.js
+    ```

@@ -1,3 +1,3 @@
 export const scriptParams = [ 
-    'HJ1dGPxVr13KHGiCTGQfZjZMKGc8J52CsHEjcEXNMDyeGxf', 0, 10, 'wss://apps-kusama-rpc.polkadot.io'
+    'HZUyowqk6wH6o8B4Asf7P7hLuRXy8hPheNCKevN5QFFRRdd', 0, 10, 'wss://apps-kusama-rpc.polkadot.io'
 ];
