@@ -2,6 +2,8 @@
 Scripts for staking-payouts in Polkadot and Kusama.
 
 ### Prerequisites
+- Have nodejs installed on your machine 
+     - Linux `sudo apt install nodejs`
 - Install the `polkadot/api` package with the command `npm install @polkadot/api`
 
 ### How to start

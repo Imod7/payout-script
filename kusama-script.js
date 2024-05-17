@@ -509,18 +509,9 @@ const deriveNominatedExposures = (
 }
 
 async function main () {
-    // Retrieving user parameters/input from the command line
-    // const validatorId = process.argv[2];
-    // const eraStart = process.argv[3];
-    // const eraEnd = process.argv[4];
-    // const url = process.argv[5];
-
-    // Checking if the user has provided the required parameters
-    // if (process.argv.length < 6) { 
-    //     console.log("Usage: node index.js <validatorId> <eraStart> <eraEnd> <url>");
-    //     return;
-    // }
-
+    fs.truncate('validatorPayouts.json', 0, function() {
+        console.log('File Content Deleted');
+    });
     // Retrieving user parameters/input from exported scriptParams
     const validatorId = scriptParams[0];
     const eraStart = scriptParams[1];
@@ -528,13 +519,14 @@ async function main () {
     const url = scriptParams[3];
 
     const range = eraEnd - eraStart;
-    const validatorPayouts = [];
+    let validatorPayoutsEntry = [];
 
     const wsProvider = new WsProvider(url);
     const api = await ApiPromise.create({ provider: wsProvider });
 
     await api.isReady;
     let i = 1;
+    fs.appendFileSync('validatorPayouts.json',  '{\n\t"validatorPayouts": [\n', 'utf8');
     for (let e = 0; e <= range; e++) {
         // Getting the era
         let era = parseInt(eraStart) + e;
@@ -567,18 +559,23 @@ async function main () {
             claimed = payouts.erasPayouts[0]?.payouts[0]?.claimed.toString();
             activeValidator = payouts.erasPayouts[0]?.activeValidator.toString();
         }
-        validatorPayouts.push(
-            {
-                validatorId,
-                era, 
-                payout: stakingPayout, 
-                wasClaimed: claimed,
-                activeValidator: activeValidator,
-            }
-        );
-        const jsonData = JSON.stringify({ validatorPayouts }, null, 2);
-        fs.writeFileSync('validatorPayouts.json', jsonData, 'utf8');
+        validatorPayoutsEntry = {
+            validatorId,
+            era,
+            payout: stakingPayout,
+            wasClaimed: claimed,
+            activeValidator: activeValidator,
+        };
+        const jsonData = JSON.stringify(validatorPayoutsEntry, null, 2);
+        console.log(`${colours.fg.green}Payout:${colours.reset} ${jsonData}`);
+        if (e < range) {
+            fs.appendFileSync('validatorPayouts.json', jsonData + ',\n', 'utf8');
+        } else {
+            fs.appendFileSync('validatorPayouts.json', jsonData + '\n', 'utf8');
+        }
+        validatorPayoutsEntry = {};
     }
+    fs.appendFileSync('validatorPayouts.json', ']\n}\n', 'utf8');
     process.exit(0);
 }
 
