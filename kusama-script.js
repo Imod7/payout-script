@@ -245,13 +245,16 @@ const deriveEraPayouts = (
             indexOfEra = validatorLedger.legacyClaimedRewards.indexOf(eraIndex);
         } else if ((validatorLedger).claimedRewards) {
             indexOfEra = (validatorLedger).claimedRewards.indexOf(eraIndex);
+            if (validatorLedger.claimedRewards[0].toString() === '634') {
+                indexOfEra = -9999;
+            }
         } else if ((validatorLedger).lastReward) {
             const lastReward = (validatorLedger).lastReward;
             if (lastReward.isSome) {
                 if (lastReward.unwrap().toNumber() === eraIndex.toNumber()) { 
                     indexOfEra = lastReward.unwrap().toNumber();
                 } else { 
-                    indexOfEra = -1; // this most correctly should be undefined
+                    indexOfEra = -9999; // this means undefined
                 }
             } else {
                 indexOfEra = -1;
@@ -261,7 +264,15 @@ const deriveEraPayouts = (
         } else {
             continue;
         }
-        const claimed = Number.isInteger(indexOfEra) && indexOfEra !== -1;
+        let claimed;
+        let claimedStr;
+        if (indexOfEra === -9999) {
+            claimed = false;
+            claimedStr = 'refer to subscan';
+        } else {
+            claimed = Number.isInteger(indexOfEra) && indexOfEra !== -1;
+            claimedStr = claimed.toString();
+        }
 
         const nominatorStakingPayout = calcPayout.calc_payout(
             totalValidatorRewardPoints.toNumber(),
@@ -274,16 +285,13 @@ const deriveEraPayouts = (
         payouts.push({
             validatorId,
             nominatorStakingPayout,
-            claimed,
+            claimedStr,
         });
     }
-
-    let activeValidator = deriveEraExposure.validators[address] ? true : false;
 
     return {
         era: eraIndex,
         payouts,
-        activeValidator,
     };
 }
 
@@ -508,6 +516,33 @@ const deriveNominatedExposures = (
     return nominatedExposures;
 }
 
+async function checkValidatorActiveInEra(api, era, validatorId) {
+    // Check if validator was active in the queried era
+    let eraArg = era;
+    if (eraArg >= 518) {
+        eraArg = eraArg + 1;
+    } else {
+        eraArg = eraArg + 2;
+    }
+    const blockNumber = kusamaErasInfo[eraArg].block_number;
+    let hash = await api.rpc.chain.getBlockHash(blockNumber);
+    let historicApi = await api.at(hash);
+    let activeEra;
+    if (historicApi.query.staking.activeEra) {
+        const activeEraWrapped = await historicApi.query.staking.activeEra();
+        activeEra = activeEraWrapped.unwrap().index;
+    } else {
+        activeEra = await historicApi.query.staking.currentEra();
+    }
+    let validatorsInEra = await historicApi.query.session.validators()
+    let validatorFound = validatorsInEra.find((validator) => validator.toString() === validatorId);
+    if (validatorFound) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 async function main () {
     fs.truncate('validatorPayouts.json', 0, function() {
         console.log('File Content Deleted');
@@ -540,7 +575,9 @@ async function main () {
         else {
             blockNumber = kusamaErasInfo[era + 85].block_number - 1;
         }
-        
+
+        const activeValidator = await checkValidatorActiveInEra(api, era, validatorId);
+
         let hash = await api.rpc.chain.getBlockHash(blockNumber);
         console.log(`\n${colours.fg.cyan}Payouts for era:${colours.reset} ${era}`);
         console.log(`${colours.fg.cyan}Query block number:${colours.reset} ${blockNumber}`);
@@ -550,24 +587,21 @@ async function main () {
         let payouts = await fetchAccountStakingPayout(api, hash, validatorId, era, historicApi);
         let stakingPayout = '0';
         let claimed = '';
-        let activeValidator = '';
         if (payouts.erasPayouts[0].payouts !== undefined) {
             if (payouts.erasPayouts[0]?.payouts[0]?.nominatorStakingPayout !== undefined) {
                 stakingPayout = payouts.erasPayouts[0]?.payouts[0]?.nominatorStakingPayout.toString();
-                console.log(`${colours.fg.green}Payouts FOUND ${colours.reset}`);
+                console.log(`${colours.fg.green}Payouts Found ${colours.reset}`);
             }
-            claimed = payouts.erasPayouts[0]?.payouts[0]?.claimed.toString();
-            activeValidator = payouts.erasPayouts[0]?.activeValidator.toString();
+            claimed = payouts.erasPayouts[0]?.payouts[0]?.claimedStr;
         }
         validatorPayoutsEntry = {
             validatorId,
             era,
             payout: stakingPayout,
-            wasClaimed: claimed,
-            activeValidator: activeValidator,
+            wasClaimed: claimed ? claimed : 'false',
+            activeValidator: activeValidator.toString(),
         };
         const jsonData = JSON.stringify(validatorPayoutsEntry, null, 2);
-        console.log(`${colours.fg.green}Payout:${colours.reset} ${jsonData}`);
         if (e < range) {
             fs.appendFileSync('validatorPayouts.json', jsonData + ',\n', 'utf8');
         } else {
