@@ -530,7 +530,11 @@ async function checkValidatorActiveInEra(api, era, validatorId) {
     let activeEra;
     if (historicApi.query.staking.activeEra) {
         const activeEraWrapped = await historicApi.query.staking.activeEra();
-        activeEra = activeEraWrapped.unwrap().index;
+        if (activeEraWrapped.isNone) {
+            activeEra = await historicApi.query.staking.currentEra();
+        } else {
+            activeEra = activeEraWrapped.unwrap().index;
+        }
     } else {
         activeEra = await historicApi.query.staking.currentEra();
     }
