@@ -245,7 +245,7 @@ const deriveEraPayouts = (
             indexOfEra = validatorLedger.legacyClaimedRewards.indexOf(eraIndex);
         } else if ((validatorLedger).claimedRewards) {
             indexOfEra = (validatorLedger).claimedRewards.indexOf(eraIndex);
-            if (validatorLedger.claimedRewards[0].toString() === '634') {
+            if (eraIndex.toNumber() < 706) {
                 indexOfEra = -9999;
             }
         } else if ((validatorLedger).lastReward) {
@@ -257,7 +257,7 @@ const deriveEraPayouts = (
                     indexOfEra = -9999; // this means undefined
                 }
             } else {
-                indexOfEra = -1;
+                indexOfEra = -9999;
             }
         } else if (eraIndex.toNumber() < 518 && isKusama) {
             indexOfEra = eraIndex.toNumber();
@@ -602,7 +602,7 @@ async function main () {
             validatorId,
             era,
             payout: stakingPayout,
-            wasClaimed: claimed ? claimed : 'false',
+            wasClaimed: claimed,
             activeValidator: activeValidator.toString(),
         };
         const jsonData = JSON.stringify(validatorPayoutsEntry, null, 2);
