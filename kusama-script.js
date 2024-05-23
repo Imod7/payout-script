@@ -245,20 +245,12 @@ const deriveEraPayouts = (
             indexOfEra = validatorLedger.legacyClaimedRewards.indexOf(eraIndex);
         } else if ((validatorLedger).claimedRewards) {
             indexOfEra = (validatorLedger).claimedRewards.indexOf(eraIndex);
-            if (eraIndex.toNumber() < 706) {
+            // Setting era 718 since it is 84 eras after the migration of lastReward to claimedRewards (era 634)
+            if (eraIndex.toNumber() < 718) {
                 indexOfEra = -9999;
             }
         } else if ((validatorLedger).lastReward) {
-            const lastReward = (validatorLedger).lastReward;
-            if (lastReward.isSome) {
-                if (lastReward.unwrap().toNumber() === eraIndex.toNumber()) { 
-                    indexOfEra = lastReward.unwrap().toNumber();
-                } else { 
-                    indexOfEra = -9999; // this means undefined
-                }
-            } else {
-                indexOfEra = -9999;
-            }
+            indexOfEra = -9999;
         } else if (eraIndex.toNumber() < 518 && isKusama) {
             indexOfEra = eraIndex.toNumber();
         } else {
