@@ -19,11 +19,20 @@ Scripts for staking-payouts in Polkadot and Kusama.
     ```
 - An example would be :
     ```shell script
-    $ node polkadot-script.js 15a9ScnYeVfQGL9HQtTn3nkUY1DTB8LzEX391yZvFRzJZ9V7 1400 1410 wss://rpc.polkadot.io
+    $ node polkadot-script.js 15a9ScnYeVfQGL9HQtTn3nkUY1DTB8LzEX391yZvFRzJZ9V7 1300 1320 wss://rpc.polkadot.io
     ```
 
 ### Things to consider
 Public endpoints like `wss://rpc.polkadot.io` have rate limit so if you query for a lot of validators and eras you might get banned.
+
+### Troubleshooting
+When you run the script, if you get the following error:
+
+````
+TypeError: Cannot read properties of undefined (reading 'block_number')
+````
+
+this means that the entries in the [polkadotErasInfo.js](./polkadotErasInfo.js) file need to be updated to include more eras.
 
 ### Output
 The result is saved in the file `validatorPayouts.json` in the following format: 
@@ -31,20 +40,20 @@ The result is saved in the file `validatorPayouts.json` in the following format:
 ```json
 {
   "validatorPayouts": [
-    {
+     {
       "validatorId": "15a9ScnYeVfQGL9HQtTn3nkUY1DTB8LzEX391yZvFRzJZ9V7",
-      "era": 1400,
-      "payout": "119021393783",
+      "era": 1300,
+      "payout": "115988858522",
       "wasClaimed": "true",
       "activeValidator": "true"
     },
     {
       "validatorId": "15a9ScnYeVfQGL9HQtTn3nkUY1DTB8LzEX391yZvFRzJZ9V7",
-      "era": 1401,
-      "payout": "118962619155",
+      "era": 1301,
+      "payout": "115404066247",
       "wasClaimed": "true",
       "activeValidator": "true"
-    }
+    },
     ...
     ...
   ]
@@ -82,3 +91,35 @@ which will return the first object from the output
     ```
     $ node kusama-script.js
     ```
+
+### Things to consider
+The message:
+````
+Unable to map [u8; 32] to a lookup index
+````
+printed in the output after each result is not an error (and not directly related to the current script) so it can be ignored.
+
+
+### Output
+The result is saved in the file `validatorPayouts.json` in the following format:
+
+```json
+{
+	"validatorPayouts": [
+    {
+      "validatorId": "HZUyowqk6wH6o8B4Asf7P7hLuRXy8hPheNCKevN5QFFRRdd",
+      "era": 0,
+      "payout": "0",
+      "activeValidator": "false"
+    },
+    {
+      "validatorId": "HZUyowqk6wH6o8B4Asf7P7hLuRXy8hPheNCKevN5QFFRRdd",
+      "era": 1,
+      "payout": "0",
+      "activeValidator": "false"
+    },
+    ...
+    ...
+  ]
+}
+```
